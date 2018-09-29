@@ -6,6 +6,18 @@ require(PolynomF)
 require(Rmosek)
 require(ashr)
 
+#' @title Fit Empirical Bayes Normal Means with Correlated Noise
+#'
+#' @description This is the main interface for fitting ECSN models
+#'   based on algorithms proposed by Sun and Stephens.  The default
+#'   behaviour is simply to run the biconvex optimization and return
+#'   the result.
+#'
+#' @param betahat A p vector of observations
+#'
+#' @param sebetahat A p vector of known standard error.
+#'
+
 gdash = function (betahat, sebetahat,
                   mixcompdist = "normal", method = "fdr",
                   gd.normalized = TRUE, primal = FALSE,
