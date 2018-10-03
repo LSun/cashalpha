@@ -1,11 +1,3 @@
-require(EQL)
-require(SQUAREM)
-require(REBayes)
-require(CVXR)
-require(PolynomF)
-require(Rmosek)
-require(ashr)
-
 #' @title Fit Empirical Bayes Normal Means with Correlated Noise
 #'
 #' @description This is the main interface for fitting ECSN models
@@ -14,10 +6,22 @@ require(ashr)
 #'   the result.
 #'
 #' @param betahat A p vector of observations
-#'
 #' @param sebetahat A p vector of known standard error.
+#' @param mixcompdist
+#' @param method
+#' @param gd.normalized
+#' @param primal
+#' @param gd.ord
+#' @param w.lambda
+#' @param w.rho
+#' @param w.pen
+#' @param gd.priority
+#' @param lfsr
+#' @param control
+#' @export
+#' @importFrom stats dnorm pnorm
+#' @importFrom utils capture.output modifyList
 #'
-
 gdash = function (betahat, sebetahat,
                   mixcompdist = "normal", method = "fdr",
                   gd.normalized = TRUE, primal = FALSE,
@@ -106,9 +110,9 @@ w.cvxr.uncns = function (matrix_lik_w, w.init = NULL) {
   FF <- matrix_lik_w[, -1]
   f <- matrix_lik_w[, 1]
   p <- ncol(FF)
-  w <- Variable(p)
-  objective <- Maximize(SumEntries(Log(FF %*% w + f)))
-  prob <- Problem(objective)
+  w <- CVXR::Variable(p)
+  objective <- CVXR::Maximize(CVXR::SumEntries(CVXR::Log(FF %*% w + f)))
+  prob <- CVXR::Problem(objective)
   if (is.null(w.init)) {
     capture.output(result <- solve(prob), file = "/dev/null")
   } else {
@@ -241,7 +245,7 @@ biopt = function (array_F, matrix_lik_z, pi_prior, w_prior, control, primal, gd.
   Kpi = dim(array_F)[1]
   Lw = dim(array_F)[2]
   pinw_init = c(1, rep(0, Kpi - 1), 1, rep(0, Lw - 1))
-  res = squarem(par = pinw_init, fixptfn = bifixpoint, objfn = binegpenloglik,
+  res = SQUAREM::squarem(par = pinw_init, fixptfn = bifixpoint, objfn = binegpenloglik,
                 array_F = array_F, matrix_lik_z = matrix_lik_z, pi_prior = pi_prior, w_prior = w_prior, primal = primal, gd.priority = gd.priority, control = controlinput)
   return(list(pihat = normalize(pmax(0, res$par[1 : Kpi])),
               what = res$par[-(1 : Kpi)],
