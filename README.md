@@ -1,8 +1,8 @@
 # cashalpha
 
-The alpha version of the CASH package
+The alpha version of the `cashr` package
 
-CASH: Correlated Adaptive Shrinkage, using Empirical Bayes
+`cash`: Correlated Adaptive Shrinkage in R, using Empirical Bayes
 
 Install by running in R:
 
