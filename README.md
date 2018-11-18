@@ -6,4 +6,4 @@ The alpha version of the `cashr` package
 
 Install by running in R:
 
-devtools::install_github("LSun/cashalpha")
+`devtools::install_github("LSun/cashalpha")`
