@@ -118,20 +118,20 @@ bifixpoint = function(pinw, array_F, matrix_lik_z, pi_prior, w_prior, primal, gd
   return(c(pi_new, w_new))
 }
 
-w.cvxr.uncns = function (matrix_lik_w, w.init = NULL) {
-  FF <- matrix_lik_w[, -1]
-  f <- matrix_lik_w[, 1]
-  p <- ncol(FF)
-  w <- CVXR::Variable(p)
-  objective <- CVXR::Maximize(CVXR::SumEntries(CVXR::Log(FF %*% w + f)))
-  prob <- CVXR::Problem(objective)
-  if (is.null(w.init)) {
-    capture.output(result <- solve(prob), file = "/dev/null")
-  } else {
-    capture.output(result <- solve(prob, warm_start = w.init[-1]), file = "/dev/null")
-  }
-  return(result)
-}
+# w.cvxr.uncns = function (matrix_lik_w, w.init = NULL) {
+#   FF <- matrix_lik_w[, -1]
+#   f <- matrix_lik_w[, 1]
+#   p <- ncol(FF)
+#   w <- CVXR::Variable(p)
+#   objective <- CVXR::Maximize(CVXR::SumEntries(CVXR::Log(FF %*% w + f)))
+#   prob <- CVXR::Problem(objective)
+#   if (is.null(w.init)) {
+#     capture.output(result <- solve(prob), file = "/dev/null")
+#   } else {
+#     capture.output(result <- solve(prob, warm_start = w.init[-1]), file = "/dev/null")
+#   }
+#   return(result)
+# }
 
 w.mosek = function (matrix_lik_w, matrix_lik_z, w_prior, w.init = NULL) {
   A = matrix_lik_w[, -1]
