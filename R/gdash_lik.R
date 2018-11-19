@@ -1,27 +1,25 @@
 #' @title Fit Empirical Bayes Normal Means with Correlated Noise
 #'
-#' @description This is the main interface for fitting ECSN models
+#' @description This is the main interface for fitting correlated EBNM models
 #'   based on algorithms proposed by Sun and Stephens.  The default
 #'   behaviour is simply to run the biconvex optimization and return
-#'   the result.
+#'   the result and posterior calculations.
 #'
-#' @param betahat A p vector of observations
-#' @param sebetahat A p vector of known standard error.
-#' @param mixcompdist
-#' @param method
-#' @param gd.normalized
-#' @param primal
-#' @param gd.ord
-#' @param w.lambda
-#' @param w.rho
-#' @param w.pen
+#' @param x A p vector of observations
+#' @param s A p vector of known standard error.
+#' @param deltaAt0
+#' @param L
+#' @param omega.lambda
+#' @param omega.rho
+#' @param omega.pen
+#' @param mixsd.mult
 #' @param gd.priority
-#' @param lfsr
 #' @param control
 #' @export
 #' @importFrom stats dnorm pnorm
 #' @importFrom utils capture.output modifyList
 #'
+
 cash = function (x, s = 1,
                  deltaAt0 = TRUE,
                  L = 10,
@@ -54,7 +52,7 @@ cash = function (x, s = 1,
       omega_prior = omega.lambda / sqrt(omega.rho^(1 : L))
       omega_prior[seq(1, L, by = 2)] = 0
     }
-  } else if (length(omega_pen) = length(L)) {
+  } else if (length(omega_pen) == length(L)) {
     omega_prior = omega.pen
   } else {
     stop('The length of penalty parameters of omega should be L.')

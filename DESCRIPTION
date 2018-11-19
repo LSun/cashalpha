@@ -1,12 +1,12 @@
 Package: cashalpha
 Type: Package
 Title: Correlated Adaptive Shrinkage, using Empirical Bayes
-Version: 0.1.0
+Version: 0.1.1
 Author: Lei Sun, Matthew Stephens
 Maintainer: Lei Sun <sunl@uchicago.edu>
 Description: The R package 'cashalpha' fits
-    empirical Bayes normal means with correlated noise
-    using the exchangeable correlated standard normal model
+    Empirical Bayes Normal Means with correlated noise
+    using the exchangeable correlated noise model
 License: GPL (>=3)
 Imports: Rmosek,PolynomF,REBayes,SQUAREM
 Encoding: UTF-8
