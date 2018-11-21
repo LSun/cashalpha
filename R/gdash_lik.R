@@ -6,7 +6,7 @@
 #'   the result and posterior calculations.
 #'
 #' @param x A p vector of observations
-#' @param s A p vector of known standard error.
+#' @param s A scalar or a p vector of standard deviations.
 #' @param deltaAt0
 #' @param L
 #' @param omega.lambda
@@ -32,16 +32,19 @@ cash = function (x, s = 1,
   } else if (length(x) != length(s) | !all(s > 0)) {
     stop("s should either be a positive number or a vector of positive numbers with the same length of x")
   }
-  if (isTRUE(deltaAt0)) {
+
+  ## setting a dense grid of sd for gaussian mixture prior
+  if (deltaAt0) {
     sd = c(0, autoselect.mixsd(x, s, mult = mixsd.mult))
     pi_prior = c(10, rep(1, length(sd) - 1))
   } else {
     sd = autoselect.mixsd(x, s, mult = mixsd.mult)
     pi_prior = rep(1, length(sd))
   }
-  hermite = Hermite(L)
+
   array_F = array_f(x, s, sd, L, mixcompdist = 'normal', gd.normalized = TRUE)
   array_F = aperm(array_F, c(2, 3, 1))
+
   if (is.null(omega.pen)) {
     if (is.null(omega.lambda)) {
       omega_prior = rep(0, L)
@@ -57,6 +60,8 @@ cash = function (x, s = 1,
   } else {
     stop('The length of penalty parameters of omega should be L.')
   }
+
+  hermite = Hermite(L)
   z.extra = seq(-10, 10, by = 0.001)
   gd0.std = dnorm(z.extra)
   matrix_lik_z = cbind(gd0.std)
@@ -64,27 +69,68 @@ cash = function (x, s = 1,
     gd.std = (-1)^i * hermite[[i]](z.extra) * gd0.std / sqrt(factorial(i))
     matrix_lik_z = cbind(matrix_lik_z, gd.std)
   }
+
   res = biopt(array_F, matrix_lik_z, pi_prior, omega_prior, control, primal = FALSE, gd.priority)
   pihat = res$pihat
   what = res$what
   fitted_g = normalmix(pi = pihat, mean = 0, sd = sd)
   penloglik = -res$B
+
   array_PM = array_pm(x, s, sd, L, gd.normalized = TRUE)
   array_PM = aperm(array_PM, c(2, 3, 1))
-  beta_pm = colSums(t(apply(pihat * array_PM, 2, colSums)) * what) / colSums(t(apply(pihat * array_F, 2, colSums)) * what)
+  theta_pm = colSums(t(apply(pihat * array_PM, 2, colSums)) * what) / colSums(t(apply(pihat * array_F, 2, colSums)) * what)
+
   lfdr = lfdr_top(pihat[1], what, x, s, L) / colSums(t(apply(pihat * array_F, 2, colSums)) * what)
-  qvalue = ashr::qval.from.lfdr(lfdr)
-  return(list(fitted_g = fitted_g, omega = what, penloglik = penloglik, niter = res$niter, converged = res$converged, array_F = array_F, array_PM = array_PM, pm = beta_pm, lfdr = as.vector(lfdr), qvalue = qvalue))
+  qvalue = qval.from.lfdr(lfdr)
+
+  output <- list(fitted_g = fitted_g,
+                 L = L,
+                 omega = what,
+                 penloglik = penloglik,
+                 niter = res$niter,
+                 converged = res$converged,
+                 pm = theta_pm,
+                 lfdr = as.vector(lfdr),
+                 qvalue = qvalue,
+                 x = x,
+                 s = s,
+                 deltaAt0 = deltaAt0,
+                 array_F = array_F,
+                 array_PM = array_PM
+                 )
+  class(output) <- "cash"
+
+  return(output)
 }
 
-# if (lfsr) {
-#   array_PP <- array_PosProb(betahat, sebetahat, method, sd, gd.ord, gd.normalized)
-#   array_PP = aperm(array_PP, c(2, 3, 1))
-#   beta_PosProb <- colSums(t(apply(pihat * array_PP, 2, colSums)) * what) / colSums(t(apply(pihat * array_F, 2, colSums)) * what)
-#   lfsr <- ashr::compute_lfsr(1 - lfdr - beta_PosProb, lfdr)
-#   svalue <- ashr::qval.from.lfdr(lfsr)
-#   return(list(fitted_g = fitted_g, w = what, penloglik = penloglik, niter = res$niter, converged = res$converged, array_F = array_F, array_PM = array_PM, pm = beta_pm, lfdr = as.vector(lfdr), qvalue = qvalue, lfsr = lfsr, svalue = svalue))
-# }
+print.cash <- function (output, ...) {
+  print(summary.cash(output, ...))
+}
+
+summary.cash <- function (output, ...) {
+  print('The estimated prior distribution:')
+  print(output$fitted_g)
+  print('The estimated coefficients of standardized Gaussian derivatives')
+  print(paste('L =', output$L))
+  print(paste('omega =', output$omega))
+  print(paste('penloglik =', output$penloglik))
+  print(paste('niter =', output$niter))
+  print(output$converged)
+}
+
+get_svalue <- function (output) {
+  array_PP <- array_PosProb(output$x, output$s, output$deltaAt0, output$fitted_g$sd, gd.ord = output$L, gd.normalized = TRUE)
+  array_PP = aperm(array_PP, c(2, 3, 1))
+  theta_PosProb <- colSums(t(apply(output$fitted_g$pi * array_PP, 2, colSums)) * output$what) / colSums(t(apply(output$fitted_g$pi * array_F, 2, colSums)) * output$what)
+  lfsr <- compute_lfsr(1 - output$lfdr - theta_PosProb, output$lfdr)
+  svalue <- qval.from.lfdr(lfsr)
+  return(list(lfsr = lfsr,
+              svalue = svalue))
+}
+
+compute_lfsr <- function (NegativeProb, ZeroProb) {
+  ifelse(NegativeProb > 0.5 * (1 - ZeroProb), 1 - NegativeProb, NegativeProb + ZeroProb)
+}
 
 bifixpoint = function(pinw, array_F, matrix_lik_z, pi_prior, w_prior, primal, gd.priority){
   Kpi = dim(array_F)[1]
@@ -376,7 +422,7 @@ lfdr_top = function (pi0, w, betahat, sebetahat, gd.ord) {
   return(gd.std.mat %*% w * pi0)
 }
 
-array_PosProb = function (betahat, sebetahat, method, sd, gd.ord, gd.normalized) {
+array_PosProb = function (betahat, sebetahat, deltaAt0, sd, gd.ord, gd.normalized) {
   sd.mat = sqrt(outer(sebetahat^2, sd^2, FUN = "+"))
   beta.std.mat = betahat / sd.mat
   se.std.mat <- sebetahat / sd.mat
@@ -419,7 +465,7 @@ array_PosProb = function (betahat, sebetahat, method, sd, gd.ord, gd.normalized)
     }
   }
   # temp2.test = outer(beta.std.mat, 0:gd.ord, FUN = gauss.deriv)
-  if (method == "fdr") {
+  if (deltaAt0) {
     array_PosProb = temp2
     array_PosProb[, 1, ] <- 0
   } else {
@@ -463,4 +509,14 @@ ghat.cdf = function (x, fitted.g) {
   mean = fitted.g$mean
   sd = fitted.g$sd
   return(sum(pi * pnorm(x, mean, sd)))
+}
+
+qval.from.lfdr <- function (lfdr) {
+  if (sum(!is.na(lfdr)) == 0) {
+    return(rep(NA, length(lfdr)))
+  }
+  o = order(lfdr)
+  qvalue = rep(NA, length(lfdr))
+  qvalue[o] = (cumsum(sort(lfdr))/(1 : sum(!is.na(lfdr))))
+  return(qvalue)
 }
