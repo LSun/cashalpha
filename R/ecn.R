@@ -2,7 +2,7 @@
 #'
 #' @export
 
-ecn = function (z, gd.order, omega.lambda = 10, omega.rho = 0.5, omega.pen = NULL) {
+ecn = function (z, gd.order = 10, omega.lambda = 10, omega.rho = 0.5, omega.pen = NULL) {
   L <- gd.order
 
   if (is.null(omega.pen)) {
@@ -42,14 +42,14 @@ ecn = function (z, gd.order, omega.lambda = 10, omega.rho = 0.5, omega.pen = NUL
   w.status = w.fit$status
   loglik.hat = sum(log(matrix_lik_w %*% w.hat))
 
-  output <- list(gd.order = L, omega = w.hat, loglik = loglik.hat, status = w.status)
+  output <- list(gd.order = L, omega = w.hat, loglik = loglik.hat, status = w.status, z = z)
   class(output) <- 'ecn'
 
   return(output)
 }
 
 summary.ecn <- function (output, ...) {
-  print(output)
+  print(output[1 : 4])
 }
 
 print.ecn <- function (output, ...) {
