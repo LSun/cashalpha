@@ -7,13 +7,13 @@
 #'
 #' @param x A p vector of observations
 #' @param s A scalar or a p vector of standard deviations.
-#' @param deltaAt0
-#' @param L
+#' @param deltaAt0 Logical, indicating whether to use a point mass at zero as one of components for a mixture distribution of the prior.
+#' @param gd.order
 #' @param omega.lambda
 #' @param omega.rho
 #' @param omega.pen
 #' @param mixsd.mult
-#' @param gd.priority
+#' @param gd.priority Logical, indicating whether to optimizer over prior
 #' @param control
 #' @export
 #' @importFrom stats dnorm pnorm
@@ -22,12 +22,14 @@
 
 cash = function (x, s = 1,
                  deltaAt0 = TRUE,
-                 L = 10,
+                 gd.order = 10,
                  omega.lambda = 10, omega.rho = 0.5, omega.pen = NULL,
                  mixsd.mult = sqrt(2),
                  gd.priority = FALSE,
                  control = list(maxiter = 50)) {
   if (s > 0 & length(s) == 1L) {
+    L <- gd.order
+
     s = rep(s, length(x))
   } else if (length(x) != length(s) | !all(s > 0)) {
     stop("s should either be a positive number or a vector of positive numbers with the same length of x")
@@ -84,7 +86,7 @@ cash = function (x, s = 1,
   qvalue = qval.from.lfdr(lfdr)
 
   output <- list(fitted_g = fitted_g,
-                 L = L,
+                 gd.order = L,
                  omega = what,
                  penloglik = penloglik,
                  niter = res$niter,
@@ -103,25 +105,24 @@ cash = function (x, s = 1,
   return(output)
 }
 
+#' @export
+
 print.cash <- function (output, ...) {
   print(summary.cash(output, ...))
 }
 
+#' @export
+
 summary.cash <- function (output, ...) {
-  print('The estimated prior distribution:')
-  print(output$fitted_g)
-  print('The estimated coefficients of standardized Gaussian derivatives')
-  print(paste('L =', output$L))
-  print(paste('omega =', output$omega))
-  print(paste('penloglik =', output$penloglik))
-  print(paste('niter =', output$niter))
-  print(output$converged)
+  print(output[1 : 6])
 }
 
+#' @export
+
 get_svalue <- function (output) {
-  array_PP <- array_PosProb(output$x, output$s, output$deltaAt0, output$fitted_g$sd, gd.ord = output$L, gd.normalized = TRUE)
+  array_PP <- array_PosProb(output$x, output$s, output$deltaAt0, output$fitted_g$sd, gd.ord = output$gd.order, gd.normalized = TRUE)
   array_PP = aperm(array_PP, c(2, 3, 1))
-  theta_PosProb <- colSums(t(apply(output$fitted_g$pi * array_PP, 2, colSums)) * output$what) / colSums(t(apply(output$fitted_g$pi * array_F, 2, colSums)) * output$what)
+  theta_PosProb <- colSums(t(apply(output$fitted_g$pi * array_PP, 2, colSums)) * output$omega) / colSums(t(apply(output$fitted_g$pi * output$array_F, 2, colSums)) * output$omega)
   lfsr <- compute_lfsr(1 - output$lfdr - theta_PosProb, output$lfdr)
   svalue <- qval.from.lfdr(lfsr)
   return(list(lfsr = lfsr,
