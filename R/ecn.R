@@ -48,9 +48,13 @@ ecn = function (z, gd.order = 10, omega.lambda = 10, omega.rho = 0.5, omega.pen 
   return(output)
 }
 
+#' @export
+
 summary.ecn <- function (output, ...) {
-  print(output[1 : 4])
+  output[1 : 4]
 }
+
+#' @export
 
 print.ecn <- function (output, ...) {
   print(summary.ecn(output))
@@ -69,6 +73,8 @@ gdfit.mom = function (z, gd.ord) {
   }
   return(list(gd.ord = gd.ord, w = w))
 }
+
+#' @export
 
 plot.ecn = function (output, symm = TRUE, breaks = 100, std.norm = TRUE, main, legend = TRUE) {
   z <- output$z
