@@ -106,14 +106,14 @@ cash = function (x, s = 1,
 
 #' @export
 
-print.cash <- function (output, ...) {
-  print(summary.cash(output, ...))
+summary.cash <- function (output, ...) {
+  output[1 : 6]
 }
 
 #' @export
 
-summary.cash <- function (output, ...) {
-  print(output[1 : 6])
+print.cash <- function (output, ...) {
+  print(summary.cash(output, ...))
 }
 
 #' @export
