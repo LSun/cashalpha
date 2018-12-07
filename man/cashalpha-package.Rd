@@ -6,7 +6,7 @@
 \alias{cashalpha-package}
 \title{: Correlated Adaptive Shrinkage, using Empirical Bayes}
 \description{
-: The R package 'cashalpha' fits empirical Bayes normal means with correlated noise using the exchangeable correlated standard normal model
+: The R package 'cashalpha' fits Empirical Bayes Normal Means with correlated noise using the exchangeable correlated noise model
 }
 \author{
 : Lei Sun, Matthew Stephens, \email{sunl@uchicago.edu}

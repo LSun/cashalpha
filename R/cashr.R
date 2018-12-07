@@ -19,7 +19,6 @@
 #' @importFrom stats dnorm pnorm
 #' @importFrom utils capture.output modifyList
 #'
-
 cash = function (x, s = 1,
                  deltaAt0 = TRUE,
                  gd.order = 10,
